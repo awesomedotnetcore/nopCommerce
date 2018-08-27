@@ -211,7 +211,13 @@ namespace Nop.Web.Factories
                             };
                             if (point.PickupFee > 0)
                             {
-                                var amount = _taxService.GetShippingPrice(point.PickupFee, _workContext.CurrentCustomer);
+                                var amount = decimal.Zero;
+                                //for in-store pickup amount must be free
+                                if (!(_workContext.CurrentCustomer.ShippingAddress.ZipPostalCode == point.ZipPostalCode &&
+                                    _workContext.CurrentCustomer.ShippingAddress.Country == _countryService.GetCountryByTwoLetterIsoCode(point.CountryCode)))
+                                {
+                                    amount = _taxService.GetShippingPrice(point.PickupFee, _workContext.CurrentCustomer);
+                                }                                
                                 amount = _currencyService.ConvertFromPrimaryStoreCurrency(amount, _workContext.WorkingCurrency);
                                 pickupPointModel.PickupFee = _priceFormatter.FormatShippingPrice(amount, true);
                             }

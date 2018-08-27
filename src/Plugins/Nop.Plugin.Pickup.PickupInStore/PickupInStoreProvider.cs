@@ -82,7 +82,9 @@ namespace Nop.Plugin.Pickup.PickupInStore
                 if (pointAddress == null)
                     continue;
 
-                result.PickupPoints.Add(new PickupPoint
+                
+
+                var pickupPoin = new PickupPoint
                 {
                     Id = point.Id.ToString(),
                     Name = point.Name,
@@ -97,7 +99,16 @@ namespace Nop.Plugin.Pickup.PickupInStore
                     PickupFee = point.PickupFee,
                     DisplayOrder = point.DisplayOrder,
                     ProviderSystemName = PluginDescriptor.SystemName
-                });
+                };
+
+                //for in-store pickup amount must be free
+                if (address.ZipPostalCode == pickupPoin.ZipPostalCode &&
+                    address.Country == _countryService.GetCountryByTwoLetterIsoCode(pickupPoin.CountryCode))
+                {
+                    pickupPoin.PickupFee = decimal.Zero;
+                }
+
+                result.PickupPoints.Add(pickupPoin);
             }
 
             if (!result.PickupPoints.Any())
