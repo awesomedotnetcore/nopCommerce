@@ -59,6 +59,10 @@ namespace Nop.Web.Areas.Admin.Controllers
         [AdminAntiForgery(true)]
         public virtual IActionResult SaveDownloadUrl(string downloadUrl)
         {
+            //Don't allowed to save empty download object
+            if (string.IsNullOrEmpty(downloadUrl))
+                throw new ArgumentException();
+
             //insert
             var download = new Download
             {
