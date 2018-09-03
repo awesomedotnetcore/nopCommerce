@@ -59,9 +59,15 @@ namespace Nop.Web.Areas.Admin.Controllers
         [AdminAntiForgery(true)]
         public virtual IActionResult SaveDownloadUrl(string downloadUrl)
         {
-            //Don't allowed to save empty download object
+            //don't allow to save empty download object
             if (string.IsNullOrEmpty(downloadUrl))
-                throw new ArgumentException();
+            {
+                return Json(new
+                {
+                    success = false,
+                    message = "Please enter URL"
+                });
+            }
 
             //insert
             var download = new Download
@@ -73,7 +79,7 @@ namespace Nop.Web.Areas.Admin.Controllers
             };
             _downloadService.InsertDownload(download);
 
-            return Json(new { downloadId = download.Id });
+            return Json(new { success = true, downloadId = download.Id });
         }
 
         [HttpPost]
