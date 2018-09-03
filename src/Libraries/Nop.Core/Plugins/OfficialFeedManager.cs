@@ -20,26 +20,19 @@ namespace Nop.Core.Plugins
 
         private static XmlDocument GetDocument(string feedQuery, params object[] args)
         {
-            try
+            var request = WebRequest.Create(MakeUrl(feedQuery, args));
+            request.Timeout = 5000;
+            using (var response = request.GetResponse())
             {
-                var request = WebRequest.Create(MakeUrl(feedQuery, args));
-                request.Timeout = 5000;
-                using (var response = request.GetResponse())
+                using (var dataStream = response.GetResponseStream())
+                using (var reader = new StreamReader(dataStream))
                 {
-                    using (var dataStream = response.GetResponseStream())
-                    using (var reader = new StreamReader(dataStream))
-                    {
-                        var responseFromServer = reader.ReadToEnd();
+                    var responseFromServer = reader.ReadToEnd();
 
-                        var xmlDoc = new XmlDocument();
-                        xmlDoc.LoadXml(responseFromServer);
-                        return xmlDoc;
-                    }
+                    var xmlDoc = new XmlDocument();
+                    xmlDoc.LoadXml(responseFromServer);
+                    return xmlDoc;
                 }
-            }
-            catch 
-            {
-                return new XmlDocument();
             }
         }
 
@@ -60,19 +53,12 @@ namespace Nop.Core.Plugins
         /// <returns>Result</returns>
         public virtual IList<OfficialFeedCategory> GetCategories()
         {
-            try
+            return GetDocument("getCategories=1").SelectNodes(@"//categories/category").Cast<XmlNode>().Select(node => new OfficialFeedCategory
             {
-                return GetDocument("getCategories=1").SelectNodes(@"//categories/category").Cast<XmlNode>().Select(node => new OfficialFeedCategory
-                {
-                    Id = int.Parse(ElText(node, @"id")),
-                    ParentCategoryId = int.Parse(ElText(node, @"parentCategoryId")),
-                    Name = ElText(node, @"name")
-                }).ToList();
-            }
-            catch
-            {
-                return new List<OfficialFeedCategory>();
-            }
+                Id = int.Parse(ElText(node, @"id")),
+                ParentCategoryId = int.Parse(ElText(node, @"parentCategoryId")),
+                Name = ElText(node, @"name")
+            }).ToList();
         }
 
         /// <summary>
@@ -81,18 +67,11 @@ namespace Nop.Core.Plugins
         /// <returns>Result</returns>
         public virtual IList<OfficialFeedVersion> GetVersions()
         {
-            try
+            return GetDocument("getVersions=1").SelectNodes(@"//versions/version").Cast<XmlNode>().Select(node => new OfficialFeedVersion
             {
-                return GetDocument("getVersions=1").SelectNodes(@"//versions/version").Cast<XmlNode>().Select(node => new OfficialFeedVersion
-                {
-                    Id = int.Parse(ElText(node, @"id")),
-                    Name = ElText(node, @"name")
-                }).ToList();
-            }
-            catch
-            {
-                return new List<OfficialFeedVersion>();
-            }
+                Id = int.Parse(ElText(node, @"id")),
+                Name = ElText(node, @"name")
+            }).ToList();
         }
 
         /// <summary>
@@ -110,15 +89,10 @@ namespace Nop.Core.Plugins
             string searchTerm = "",
             int pageIndex = 0, int pageSize = int.MaxValue)
         {
-            var xmlDoc = new XmlDocument();
-            try
-            {
-                //pageSize parameter is currently ignored by official site (set to 15)
-                xmlDoc = GetDocument("category={0}&version={1}&price={2}&pageIndex={3}&pageSize={4}&searchTerm={5}",
-                    categoryId, versionId, price, pageIndex, pageSize, WebUtility.UrlEncode(searchTerm));
-            }
-            catch {}
-
+            //pageSize parameter is currently ignored by official site (set to 15)
+            var xmlDoc = GetDocument("category={0}&version={1}&price={2}&pageIndex={3}&pageSize={4}&searchTerm={5}",
+                categoryId, versionId, price, pageIndex, pageSize, WebUtility.UrlEncode(searchTerm));
+            
             var list = xmlDoc.SelectNodes(@"//extensions/extension").Cast<XmlNode>().Select(node => new OfficialFeedPlugin
                 {
                     Name = ElText(node, @"name"),
@@ -129,8 +103,7 @@ namespace Nop.Core.Plugins
                     Price = ElText(node, @"price")
                 }).ToList();
 
-            var totalRecords = 0;
-            int.TryParse(ElText(xmlDoc.SelectNodes(@"//totalRecords")[0], @"value"), out totalRecords);
+            var totalRecords = int.Parse(ElText(xmlDoc.SelectNodes(@"//totalRecords")[0], @"value"));
 
             return new PagedList<OfficialFeedPlugin>(list, pageIndex, pageSize, totalRecords);            
         }
