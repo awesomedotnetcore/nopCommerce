@@ -107,7 +107,7 @@ namespace Nop.Services.Installation
         private readonly IWebHelper _webHelper;
 
         //list of unique search engine names for product tags
-        private List<string> _productTagSeNames;
+        private List<string> _seNames ;
 
         #endregion
 
@@ -227,7 +227,7 @@ namespace Nop.Services.Installation
             this._warehouseRepository = warehouseRepository;
             this._webHelper = webHelper;
 
-            _productTagSeNames  = new List<string>();
+            _seNames = new List<string>();
         }
 
         #endregion
@@ -5915,14 +5915,16 @@ namespace Nop.Services.Installation
             //search engine names
             foreach (var topic in topics)
             {
-                _urlRecordRepository.Insert(new UrlRecord
+                var urlRecord = new UrlRecord
                 {
                     EntityId = topic.Id,
                     EntityName = typeof(Topic).Name,
                     LanguageId = 0,
                     IsActive = true,
                     Slug = ValidateSeName(topic, !string.IsNullOrEmpty(topic.Title) ? topic.Title : topic.SystemName)
-                });
+                };
+
+                SaveUrlRecord(urlRecord);
             }
         }
 
@@ -7096,15 +7098,17 @@ namespace Nop.Services.Installation
             //search engine names
             foreach (var category in allCategories)
             {
-                _urlRecordRepository.Insert(new UrlRecord
+
+                var urlRecord = new UrlRecord
                 {
                     EntityId = category.Id,
                     EntityName = typeof(Category).Name,
                     LanguageId = 0,
                     IsActive = true,
                     Slug = ValidateSeName(category, category.Name)
-                });
-                _productTagSeNames.Add(ValidateSeName(category, category.Name));
+                };
+
+                SaveUrlRecord(urlRecord);
             }
         }
 
@@ -7170,14 +7174,17 @@ namespace Nop.Services.Installation
             //search engine names
             foreach (var manufacturer in allManufacturers)
             {
-                _urlRecordRepository.Insert(new UrlRecord
+
+                var urlRecord = new UrlRecord
                 {
                     EntityId = manufacturer.Id,
                     EntityName = typeof(Manufacturer).Name,
                     LanguageId = 0,
                     IsActive = true,
                     Slug = ValidateSeName(manufacturer, manufacturer.Name)
-                });
+                };
+
+                SaveUrlRecord(urlRecord);
             }
         }
 
@@ -10743,14 +10750,17 @@ namespace Nop.Services.Installation
             //search engine names
             foreach (var product in allProducts)
             {
-                _urlRecordRepository.Insert(new UrlRecord
+
+                var urlRecord = new UrlRecord
                 {
                     EntityId = product.Id,
                     EntityName = typeof(Product).Name,
                     LanguageId = 0,
                     IsActive = true,
                     Slug = ValidateSeName(product, product.Name)
-                });
+                };
+
+                SaveUrlRecord(urlRecord);
             }
 
             //related products
@@ -10924,14 +10934,18 @@ namespace Nop.Services.Installation
             //search engine names
             foreach (var blogPost in blogPosts)
             {
-                _urlRecordRepository.Insert(new UrlRecord
+
+                var urlRecord = new UrlRecord
                 {
                     EntityId = blogPost.Id,
                     EntityName = typeof(BlogPost).Name,
                     LanguageId = blogPost.LanguageId,
                     IsActive = true,
                     Slug = ValidateSeName(blogPost, blogPost.Title)
-                });
+                };
+
+                SaveUrlRecord(urlRecord);
+
             }
 
             //comments
@@ -11002,14 +11016,17 @@ namespace Nop.Services.Installation
             //search engine names
             foreach (var newsItem in news)
             {
-                _urlRecordRepository.Insert(new UrlRecord
+
+                var urlRecord = new UrlRecord
                 {
                     EntityId = newsItem.Id,
                     EntityName = typeof(NewsItem).Name,
                     LanguageId = newsItem.LanguageId,
                     IsActive = true,
                     Slug = ValidateSeName(newsItem, newsItem.Title)
-                });
+                };
+
+                SaveUrlRecord(urlRecord);
             }
 
             //comments
@@ -12223,14 +12240,18 @@ namespace Nop.Services.Installation
             //search engine names
             foreach (var vendor in vendors)
             {
-                _urlRecordRepository.Insert(new UrlRecord
+
+                var urlRecord = new UrlRecord
                 {
                     EntityId = vendor.Id,
                     EntityName = typeof(Vendor).Name,
                     LanguageId = 0,
                     IsActive = true,
                     Slug = ValidateSeName(vendor, vendor.Name)
-                });
+                };
+
+                SaveUrlRecord(urlRecord);
+
             }
         }
 
@@ -12271,18 +12292,31 @@ namespace Nop.Services.Installation
 
             //search engine name
             var slug = ValidateSeName(productTag, productTag.Name);
-            if (!_productTagSeNames.Contains(slug))
+            if (!_seNames.Contains(slug))
             {
-                _urlRecordRepository.Insert(new UrlRecord
+
+                var urlRecord = new UrlRecord
                 {
                     EntityId = productTag.Id,
                     EntityName = typeof(ProductTag).Name,
                     LanguageId = 0,
                     IsActive = true,
                     Slug = slug
-                });
-                _productTagSeNames.Add(slug);
+                };
+
+                SaveUrlRecord(urlRecord, true);
             }
+        }
+
+        private void SaveUrlRecord(UrlRecord urlRecord, bool ignoreIfAlreadyExist = false)
+        {
+            if (ignoreIfAlreadyExist & _seNames.Contains(urlRecord.Slug))
+            {
+                return;
+            }
+
+            _urlRecordRepository.Insert(urlRecord);
+            _seNames.Add(urlRecord.Slug);
         }
 
         #endregion
